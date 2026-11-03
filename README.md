@@ -24,6 +24,11 @@ Počítá se s tím, že to budete dělat s AI agentem, třeba s [Claude Code](h
 Agent založí město, stáhne data, postaví mapu a ukáže vám náhled. Potom s ním ladíte to, co z dat poznat nejde:
 kostely, radnici, zámek, příběhy míst.
 
+> **Pozor: výsledek je potřeba projít.** Otevřená data mají chyby a AI je dělá taky: budova na špatném místě,
+> nesmyslná výška, les tam, kde je louka, nebo vymyšlený detail v příběhu místa. Mapu si projděte čtvrť po čtvrti
+> a porovnejte se skutečností. Nejlíp to zvládne někdo, kdo město dobře zná. Než ji pustíte ven, ověřte hlavně
+> texty a fakta.
+
 Bez AI to jde taky:
 
 ```sh
@@ -124,9 +129,12 @@ web/app.html    prohlížeč, build_html.py z něj udělá site/index.html
 - **Obrys budovy při najetí myší** se počítá z dat. Když změníte tvar nebo výšku stavby, spusťte `overlay.py`
   a obrys zkontrolujte.
 
-## Podpora
+## Podpora a kafe
 
 Repozitář dávám k dispozici, jak je. Podporu neposkytuju, na issues a pull requesty se podívám, až budu mít čas.
 Pokud chcete mapu pro svoje město na klíč, napište na [info@adamklatovsky.cz](mailto:info@adamklatovsky.cz).
+
+Když vám repo ušetřilo práci, můžete mi [koupit kafe ☕](https://donate.stripe.com/3cI6oA0PE7u65Y9cim8g000).
+Budu rád, když v mapě necháte nenápadný odkaz „Vytvořeno nástrojem izomapa“ (je v O projektu a v nápovědě).
 
 Prosím, nepojmenovávejte svoje projekty „Izomapa“ a nepoužívejte doménu izomapa.fun. Pojmenujte je po svém městě.

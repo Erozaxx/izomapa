@@ -19,6 +19,9 @@ jiné město. Komunikuj česky, věcně, a před dlouhými kroky řekni, kolik b
 5. **Kontrola:** `python compose.py summer 8` udělá `build/nahled_summer.png`. Prohlédni si ho (švy mezi čtverci,
    prázdná místa, divné barvy) a pošli uživateli. Pak `npm run nahled` a mapa běží na http://localhost:8000.
 6. **Doladění s uživatelem** (níže). Po každé úpravě: `./postav.sh render` (jen scény, render a web).
+7. **Řekni uživateli na rovinu**, že mapu musí projít a porovnat se skutečností (data i ty se můžete mýlit),
+   hlavně fakta v příbězích míst, než ji zveřejní. Kredit „Vytvořeno nástrojem izomapa“ v prohlížeči nech, pokud ho
+   uživatel výslovně nechce odstranit.
 
 ## Co ladit a jak
 
