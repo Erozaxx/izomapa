@@ -7,7 +7,8 @@ Ukázka: **[izomapa.fun](https://izomapa.fun)**, izometrický Liberec. Ten si d�
 tu nejsou jeho ručně vyladěné stavby, příběhy míst ani hra Najdi Vildu. Prosím, nedělejte další Liberec. Postavte si
 svoje město. Tenhle repozitář je přesně na to.
 
-Autor: [Adam Klatovský](https://www.adamklatovsky.cz/). Jak to vzniklo, popisuju v článku
+Autor: [Adam Klatovský](https://www.adamklatovsky.cz/). Je to zdarma. Když vám to ušetří práci,
+[kupte mi kafe ☕](https://donate.stripe.com/3cI6oA0PE7u65Y9cim8g000). Jak to vzniklo, popisuju v článku
 [Jak jsem s AI postavil izometrický Liberec](https://www.adamklatovsky.cz/blog/jak-jsem-s-ai-postavil-izometricky-liberec).
 
 ![Izometrická Chrastava, postavená tímhle repem bez ručních úprav](priklady/chrastava.webp)

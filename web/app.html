@@ -113,7 +113,8 @@ details summary { cursor: pointer; font-family: var(--display); font-size: .78re
 .head h1 { flex: 1 1 0; min-width: 0; }
 .head .sub { order: 2; flex-basis: 100%; margin-top: 8px; }
 .head-btns { display: flex; gap: 6px; align-items: start; }
-@media (min-width: 641px) { .head h1 { white-space: nowrap; font-size: 1.55rem; } }
+@media (min-width: 641px) { .head h1 { font-size: 1.55rem; } }
+h1 span { white-space: nowrap; }        /* dlouhý název města: zalomí se celý na další řádek */
 .fb-btn { box-sizing: border-box; text-decoration: none; color: #fff; background: #1877f2; border-color: #0d4fa8; }
 .fb-btn:hover { background: #2f88ff; }
 .help-btn { display: inline-grid; place-items: center; width: 30px; height: 30px; padding: 0; font-size: 1rem; }
