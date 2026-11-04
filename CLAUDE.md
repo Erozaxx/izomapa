@@ -71,8 +71,11 @@ Ukazuj uživateli výřezy před a po.
   plochá střecha také tam, kde laser měří vršek skoro stejně jako medián. Kostel má vždy věž. Garáže = řada malých
   budov bez typu.
 - mosty a lávky: úsek s `is_bridge` (OSM/Overture) delší než 8 m se nemaluje do terénu, ale je 3D mostovka (`scene.bridges`):
-  konce na terénu, mezi nimi přímka, nad cestou nebo tratí pod mostem zvednutá na 5,2 m (trať 6 m), nad vodou trochu nad hladinu,
-  horní konvexní obálka (bez propadů). Silnice: boky, betonové zábradlí, pilíře po 22 m, středová čára; lávky úzké se sloupkovým
+  nad cestou nebo tratí pod mostem zvednutá na 5,2 m (trať 6 m), nad vodou trochu nad hladinu, v rozpětí horní konvexní obálka (bez propadů).
+  Nájezdy (žádné „skokánky“): mostovka pokračuje do navazující cesty stejného druhu (i když most končí uprostřed segmentu, až 8 kusů / 200 m)
+  a výška nad terénem klesá nejvýš o `GRADE` (silnice 6 %, trať 3 %, lávka 8 %) – nájezd tak kopíruje svah. Ta část cesty se pak
+  nekreslí do terénu (auta jedou po mostovce). Navazující kusy jednoho mostu se nejdřív spojí (linemerge). Bez navazující cesty
+  konec přistane strměji (max. 20 %). Silnice: boky, betonové zábradlí, pilíře po 22 m, středová čára; lávky úzké se sloupkovým
   zábradlím. Auta jedou po mostovce (`roads` v info_src), MHD z jízdních řádů přes `decks` v overlay.json (`deckZ` v app.html).
   Tunel kratší než 60 m je podjezd: kreslí se jako cesta (nad ním vede most), delší tunely se nekreslí.
 - `render.html` + `render.mjs`: three.js v headless Chromiu po dlaždicích, varianty `spring summer autumn winter lights`.

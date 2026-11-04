@@ -365,6 +365,119 @@ for _, r in seg.iterrows():
     c = r['class']
     if r.subtype == 'rail': roads.append((0, r.geom, 'rail', 3, sname(r))); continue
     if c in RW: roads.append((RW[c], r.geom, c, RW[c], sname(r)))
+# ---------------- mosty a lávky: výška mostovky a nájezdy ----------------
+# Mostovka nad silnicí/tratí/vodou musí mít podjezdnou výšku. Aby to nebyl „skokánek“, nájezd se rozloží do navazující
+# cesty se stoupáním nejvýš GRADE (silnice 6 %, trať 3 %, lávka 8 %); ta část cesty se pak nekreslí do terénu, ale jako mostovka.
+FOOT = {'footway', 'path', 'cycleway', 'steps', 'pedestrian', 'bridleway', 'track'}
+GRADE = {'road': 0.06, 'rail': 0.03, 'foot': 0.08}
+roads = [(a_, l_, c_, w_, n_) for a_, g_, c_, w_, n_ in roads for l_ in lines(g_)]
+_under = shapely.STRtree([g for _, g, c, w, _n in roads])
+_water = shapely.unary_union([r.geom.buffer(4) for _, r in wat.iterrows()] or [Point(1e9, 1e9)])
+_rused, _rcut = set(), {}                 # cesty nájezdů tohoto mostu; index -> odříznuté úseky [(a, b)]
+def _approach(pt, dv, kind):
+    """navazující cesty od konce mostu směrem dv (stejný druh), nejvýš 8 kusů / 200 m: [(index, směr, odkud)]
+    směr True = po směru čáry od parametru t, False = proti směru od t (konec mostu může ležet i uprostřed cesty)"""
+    out, tot = [], 0.0
+    for _ in range(8):
+        best = None
+        for j in _under.query(Point(pt).buffer(1.0)):
+            j = int(j)
+            if j in _rused: continue
+            _a, l_, c_, _w, _n = roads[j]
+            if (c_ == 'rail') != (kind == 'rail') or (kind != 'rail' and (c_ in FOOT) != (kind == 'foot')): continue
+            if l_.length < 0.5 or l_.distance(Point(pt)) > 1.0: continue
+            t = l_.project(Point(pt))
+            for fs in (True, False):
+                rest = l_.length - t if fs else t
+                if rest < 0.5: continue
+                q = l_.interpolate(t + min(5.0, rest) if fs else t - min(5.0, rest)); pa = l_.interpolate(t)
+                vx, vy = q.x - pa.x, q.y - pa.y; nv = math.hypot(vx, vy) or 1
+                ca_ = (vx * dv[0] + vy * dv[1]) / nv
+                if ca_ > {'road': 0.5, 'rail': 0.7, 'foot': -0.1}[kind] and (best is None or ca_ > best[0]): best = (ca_, j, fs, t)
+        if best is None: break
+        _, j, fs, t = best; _rused.add(j); out.append((j, fs, t))
+        l_ = roads[j][1]; tot += (l_.length - t) if fs else t
+        e = l_.coords[-1] if fs else l_.coords[0]; e2 = l_.interpolate(max(t, l_.length - 3)) if fs else l_.interpolate(min(t, 3.0))
+        vx, vy = e[0] - e2.x, e[1] - e2.y; nv = math.hypot(vx, vy) or 1; dv = (vx / nv, vy / nv); pt = e[:2]
+        if tot >= 200: break
+    return out
+def _oriented(j, fs, t):                   # souřadnice nájezdu ve směru od mostu
+    l_ = roads[j][1]
+    cs = [c_[:2] for c_ in (shapely.ops.substring(l_, t, l_.length) if fs else shapely.ops.substring(l_, 0, t)).coords]
+    return cs if fs else cs[::-1]
+def _cut(app, c):                          # odříznout z cest nájezdu délku c od mostu, zbytek zůstane v terénu
+    for j, fs, t in app:
+        l_ = roads[j][1]; avail = l_.length - t if fs else t
+        a, b = (t, min(l_.length, t + c)) if fs else (max(0.0, t - c), t)
+        if b - a > 0.3: _rcut.setdefault(j, []).append((a, b))
+        c -= avail
+        if c <= 0.3: break
+# most bývá v datech rozdělený na víc kusů za sebou: spojit, ať mostovka mezi nimi nepřistává na zem
+def _bkind(r): return 'rail' if r.subtype == 'rail' else 'foot' if r['class'] in FOOT else 'road'
+_bg = {}
+for g0, r in bridge_segs: _bg.setdefault(_bkind(r), []).append((g0, r))
+bridge_segs = []
+for _k, items in _bg.items():
+    for l in lines(shapely.ops.linemerge(shapely.MultiLineString([q for g0, _r in items for q in lines(g0)]))):
+        bridge_segs.append((l, max(items, key=lambda it: it[0].intersection(l.buffer(0.5)).length)[1]))
+DECKS = []                                  # (čára, vzdálenosti, výšky mostovky, výšky terénu, šířka, druh, třída, název)
+for g0, r in bridge_segs:
+    for l in lines(g0):
+        if not l.intersects(DRAWBOX): continue
+        c = r['class']
+        kind = 'rail' if r.subtype == 'rail' else 'foot' if c in FOOT else 'road'
+        w = 4.5 if kind == 'rail' else RW.get(c, 3)
+        bc = [q[:2] for q in l.coords]
+        def _dir(a, b):
+            n_ = math.dist(a, b) or 1; return ((a[0] - b[0]) / n_, (a[1] - b[1]) / n_)
+        _rused.clear()
+        b0 = l.interpolate(min(3.0, l.length / 2)); b1 = l.interpolate(max(0.0, l.length - 3))
+        A0 = _approach(bc[0], _dir(bc[0], (b0.x, b0.y)), kind); A1 = _approach(bc[-1], _dir(bc[-1], (b1.x, b1.y)), kind)
+        pre = []
+        for j, fs, t in A0: pre += _oriented(j, fs, t)[1:]
+        post = []
+        for j, fs, t in A1: post += _oriented(j, fs, t)[1:]
+        ext = LineString(pre[::-1] + bc + post)
+        ds0 = LineString(pre[::-1] + bc[:1]).length if pre else 0.0
+        ds1 = ds0 + l.length
+        lz = ext.segmentize(4.0); xy = np.array(lz.coords)[:, :2]
+        d = np.concatenate([[0], np.cumsum(np.hypot(*np.diff(xy, axis=0).T))]); L = d[-1]
+        gz = ground(xy[:, 0], xy[:, 1])
+        span = (d >= ds0 - 0.01) & (d <= ds1 + 0.01)
+        req = gz + 0.15
+        ends = l.boundary.buffer(1.5)
+        cross = [_under.geometries[j] for j in _under.query(l) if _under.geometries[j].intersects(l) and not _under.geometries[j].intersects(ends)]
+        cross = shapely.unary_union(cross).buffer(w / 2 + 3) if cross else None     # cesty a tratě, které vedou pod mostem
+        for i, (x, y) in enumerate(xy):
+            if not span[i]: continue
+            pt = Point(x, y)
+            if cross is not None and cross.contains(pt): req[i] = gz[i] + (6.0 if kind == 'rail' else 5.2)
+            elif _water.contains(pt): req[i] = gz[i] + (1.0 if kind == 'foot' else 1.3)
+        G = GRADE[kind]
+        hr = req - gz                                  # požadovaná výška nad terénem; nájezd ji ubírá o G na metr (cesta dál kopíruje svah)
+        hz = np.max(hr[None, :] - G * np.abs(d[:, None] - d[None, :]), axis=1)
+        hz = np.minimum(hz, 0.15 + 0.2 * np.minimum(d, L - d))   # konce vždy na terénu (krátký nájezd = strmější)
+        z = gz + np.maximum(hz, 0.15)
+        si = np.where(span)[0]
+        hull = []                                      # v rozpětí mostu horní konvexní obálka (bez propadů)
+        for pt_ in zip(d[si], z[si]):
+            while len(hull) >= 2 and (hull[-1][0] - hull[-2][0]) * (pt_[1] - hull[-2][1]) - (hull[-1][1] - hull[-2][1]) * (pt_[0] - hull[-2][0]) >= 0: hull.pop()
+            hull.append(pt_)
+        z[si] = np.interp(d[si], [q[0] for q in hull], [q[1] for q in hull])
+        hi = np.where(z - gz > 0.25)[0]                 # oříznout nájezdy tam, kde mostovka leží na terénu
+        i0 = min(max(int(hi[0]) - 1, 0) if len(hi) else si[0], si[0]); i1 = max(min(int(hi[-1]) + 1, len(d) - 1) if len(hi) else si[-1], si[-1])
+        _cut(A0, ds0 - d[i0]); _cut(A1, d[i1] - ds1)
+        lz = LineString(xy[i0:i1 + 1]); d = d[i0:i1 + 1] - d[i0]
+        DECKS.append((lz, d, z[i0:i1 + 1], gz[i0:i1 + 1], w, kind, c, sname(r)))
+print('mostů', len(DECKS), 'z toho lávek', sum(k[5] == 'foot' for k in DECKS), 'nájezdů', len(_rcut))
+def _rest(l_, cuts):                       # cesta bez úseků pod mostovkami
+    out, a = [], 0.0
+    for c0, c1 in sorted(cuts):
+        if c0 - a > 0.3: out.append(shapely.ops.substring(l_, a, c0))
+        a = max(a, c1)
+    if l_.length - a > 0.3: out.append(shapely.ops.substring(l_, a, l_.length))
+    return out
+roads = [(a_, q, c_, w_, n_) for j, (a_, l_, c_, w_, n_) in enumerate(roads) for q in (_rest(l_, _rcut[j]) if j in _rcut else [l_])]
 roads.sort(key=lambda t: t[0])
 # chodníky podél ulic tam, kde v datech není souběžný chodník a nestojí budova
 SIDEWALK = {'trunk', 'primary', 'secondary', 'tertiary', 'residential', 'unclassified'}
@@ -431,40 +544,6 @@ for l, w, c, n in drive_lines:
         cd.line(P([(q.x, q.y), (q.x + rx * (w / 2 - 0.3), q.y + ry * (w / 2 - 0.3))]), fill=C['marking'], width=max(1, round(0.45 / TEX_RES)))
 all_lines = [(l, w, c, n) for _, g, c, w, n in roads if c != 'rail' for l in lines(g)]
 
-# ---------------- mosty a lávky: výška mostovky ----------------
-# konce mostu leží na terénu, mezi nimi přímka; kde by byla mostovka moc nízko (nad silnicí, tratí, vodou),
-# zvedne se oblouk (4t(1-t)), aby měla podjezdnou výšku
-FOOT = {'footway', 'path', 'cycleway', 'steps', 'pedestrian', 'bridleway', 'track'}
-_under = shapely.STRtree([g for _, g, c, w, _n in roads])
-_water = shapely.unary_union([r.geom.buffer(4) for _, r in wat.iterrows()] or [Point(1e9, 1e9)])
-DECKS = []                                  # (čára, vzdálenosti, výšky mostovky, výšky terénu, šířka, druh, třída, název)
-for g0, r in bridge_segs:
-    for l in lines(g0):
-        if not l.intersects(DRAWBOX): continue
-        c = r['class']
-        kind = 'rail' if r.subtype == 'rail' else 'foot' if c in FOOT else 'road'
-        w = 4.5 if kind == 'rail' else RW.get(c, 3)
-        lz = l.segmentize(4.0); xy = np.array(lz.coords)[:, :2]
-        d = np.concatenate([[0], np.cumsum(np.hypot(*np.diff(xy, axis=0).T))]); L = d[-1]
-        gz = ground(xy[:, 0], xy[:, 1]); t = d / L
-        lin = gz[0] + (gz[-1] - gz[0]) * t + 0.15
-        req = gz + 0.8
-        ends = l.boundary.buffer(1.5)
-        cross = [_under.geometries[j] for j in _under.query(l) if _under.geometries[j].intersects(l) and not _under.geometries[j].intersects(ends)]
-        cross = shapely.unary_union(cross).buffer(w / 2 + 3) if cross else None     # cesty a tratě, které vedou pod mostem
-        for i, (x, y) in enumerate(xy):
-            pt = Point(x, y)
-            if cross is not None and cross.contains(pt): req[i] = gz[i] + (6.0 if kind == 'rail' else 5.2)
-            elif _water.contains(pt): req[i] = gz[i] + (1.0 if kind == 'foot' else 1.3)
-        req[0], req[-1] = lin[0], lin[-1]              # konce navazují na silnici v terénu
-        z = np.maximum(lin, req)                       # přímka mezi konci, nad překážkami podjezdná výška
-        hull = []                                      # horní konvexní obálka: mostovka bez propadů (jako skutečný most)
-        for pt_ in zip(d, z):
-            while len(hull) >= 2 and (hull[-1][0] - hull[-2][0]) * (pt_[1] - hull[-2][1]) - (hull[-1][1] - hull[-2][1]) * (pt_[0] - hull[-2][0]) >= 0: hull.pop()
-            hull.append(pt_)
-        z = np.interp(d, [q[0] for q in hull], [q[1] for q in hull])
-        DECKS.append((lz, d, z, gz, w, kind, c, sname(r)))
-print('mostů', len(DECKS), 'z toho lávek', sum(k[5] == 'foot' for k in DECKS))
 def deck_line(D):
     lz, d, z = D[0], D[1], D[2]
     return [[round(x, 1), round(y, 1), round(float(h), 2)] for (x, y), h in zip(np.array(lz.coords)[:, :2], z)]
