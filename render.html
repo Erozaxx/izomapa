@@ -268,9 +268,6 @@ const wallMat = mat(/* glsl */`
         cell = floor(v / 10.0);
         if (v < 1.1) col = vec3(0.56, 0.55, 0.53);            // žulový sokl
       } else if (st < 5.5) {
-      } else if (st > 8.5 && st < 9.5) {      // U Obrázku: bílá omítka, granitový sokl a obloukové okno
-        if (v < 1.0) col = vec3(0.50, 0.46, 0.40);
-        w = abs(u - len * 0.5) < 0.6 && v > 1.6 && v < 3.4 && len > 2.0;
       } else if (st > 10.5) {                 // činžák: parter s výlohami, kordonové římsy, šambrány kolem oken
         float f = fract(v / 3.2) * 3.2;
         cell = floor(v / 3.2);
@@ -341,8 +338,6 @@ const solidMat = mat(/* glsl */`
 
 // ---------- budovy ----------
 function pointInPoly(x, y, P) { let c = false; for (let i = 0, j = P.length - 1; i < P.length; j = i++) { const [xi, yi] = P[i], [xj, yj] = P[j]; if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c; } return c; }
-// kostel Matky Boží U Obrázku (podle fotky a leteckého snímku): válcová loď s kuželovou střechou a podsebitím,
-// granitové pilastry, věž se zvonovou bání na SZ, předsíň se štítem na Z, sakristie na JV
 // výbava střechy podle satelitu (dominanty se zónami): 0 = shedy, 1 = pás (světlík, rám skla, značení), 2 = fotovoltaika,
 // 3 = valený oblouk, 4 = sedlový hřeben s pásem světlíků
 function roofDeco(b, X, eave, rc) {
@@ -666,7 +661,7 @@ function roofDeco(b, X, eave, rc) {
       pushTri(R, f(-hl, hw, top), f(-hl, -hw, top), f(-hl + hw, 0, top + rh), c, [0, 0, 0, 0]);
       pushTri(R, f(hl, -hw, top), f(hl, hw, top), f(hl - hw, 0, top + rh), c, [0, 0, 0, 0]);
     }
-    if (b.cn) {                                                          // přesah střechy (KVK): jen obvodový pás, střecha zůstane vidět
+    if (b.cn) {                                                          // přesah střechy: jen obvodový pás, střecha zůstane vidět
       const ring_ = b.p, n_ = ring_.length;
       const cx = ring_.reduce((a, q) => a + q[0], 0) / n_, cy = ring_.reduce((a, q) => a + q[1], 0) / n_;
       const out = ring_.map(([x, y]) => { const dx = x - cx, dy = y - cy, l = Math.hypot(dx, dy) || 1; return [x + dx / l * b.cn, y + dy / l * b.cn]; });
