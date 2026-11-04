@@ -49,7 +49,7 @@ for _o in OBL.values():
 # změřené výšky z DMP 1G (ČÚZK, CC BY 4.0): id -> [medián, p90] nad terénem. Nerozhodují o typu ani tvaru střechy, jen o výšce
 DMP = json.load(open('assets/dmp_vysky.json')) if os.path.exists('assets/dmp_vysky.json') else {}
 if os.path.exists('assets/dmp_rucne.json'): DMP.update({k: v for k, v in json.load(open('assets/dmp_rucne.json')).items() if not k.startswith('_')})   # ověřená měření z kontrolního seznamu
-DMP.update(UP.get('dmp', {}))                                 # ruční doplnění z kontrolního seznamu (Plaza a okolí)
+DMP.update(UP.get('dmp', {}))                                 # ruční doplnění měření
 
 
 def h01(s):
@@ -997,7 +997,7 @@ for _, r in bld.iterrows():
         if c == 'chapel': lm = 'chapel'
         if c in ('church', 'cathedral') and area > 60: lm = 'church'       # každý kostel má věž
         _dm = DOM_BY_ID.get(r.id)
-        if _dm and _dm['spec'].get('lm'): lm = _dm['spec']['lm']          # vlastní model z dominanty (radnice, obrazek, jested…)
+        if _dm and _dm['spec'].get('lm'): lm = _dm['spec']['lm']          # vlastní model z dominanty (např. radnice)
         hits = addr_tree.query(p.buffer(1.5))
         adrs = sorted({addr_txt[i] for i in hits if p.buffer(1.5).contains(addr_pts[i])})
         rs = ROOF_MAP.get(r.roof_shape if isinstance(r.roof_shape, str) else '', None)
@@ -1089,9 +1089,6 @@ for _, r in bld.iterrows():
         ring = [[round(x, 2), round(y, 2)] for x, y in list(p.exterior.coords)[:-1]]
         b = {'p': ring, 'b': round(base, 2), 'g': round(gnd, 2), 'e': round(gnd + eave, 2), 'r': rs, 'rh': round(roofh, 2),
              'parts': parts, 'wc': wc, 'rc': rc, 's': style, 'id': bid}
-        if lm == 'jested':
-            b['e'] = round(gnd + 94, 2); b['r'] = 'flat'; b['parts'] = []; b.pop('ch', None)
-            b['jd'] = [round(p.centroid.x, 2), round(p.centroid.y, 2), round(math.sqrt(area / math.pi), 2)]
         if lm: b['lm'] = lm
         if dsp:
             b['dn'] = dom['name']
@@ -1144,9 +1141,6 @@ for _, r in bld.iterrows():
             b['rad'] = [round(near.x, 2), round(near.y, 2), round(math.atan2(b_.y - a_.y, b_.x - a_.x), 4),
                         round(math.atan2(sq.y - near.y, sq.x - near.x), 4)]
             b['wc'] = (226, 212, 176); b['rc'] = (58, 66, 72); b['e'] = round(gnd + 17.5, 2)
-        if lm == 'obrazek':
-            minx, miny, maxx, maxy = p.bounds
-            b['ob'] = [round(minx, 2), round(miny, 2), round(maxx, 2), round(maxy, 2)]
         # komín u rodinných domů a vikýř u větších střech
         if parts and style in (0, 1, 11) and not lm:
             cx, cy, a, pl, pw = max(parts, key=lambda q: q[3] * q[4])
@@ -1168,18 +1162,6 @@ for _, r in bld.iterrows():
             if z: b['r'] = 'flat'; b['parts'] = []; b['rh'] = 0.0; b.pop('rt', None)
             deco = zs.get('deco') if z else dsp.get('deco')
             if deco: b['dz'] = roof_deco(p, deco, b['e'], key + str(pi))
-            tw_ = dsp.get('tower')
-            if tw_ and not z and pi == tw_piece:                    # výšková budova (S Tower) nebo věž na podnoži (krajský úřad)
-                o = p.minimum_rotated_rectangle; cs = list(o.exterior.coords)[:3]
-                e1 = np.subtract(cs[1], cs[0]); e2 = np.subtract(cs[2], cs[1])
-                if np.linalg.norm(e1) < np.linalg.norm(e2): e1, e2 = e2, e1
-                b['tm'] = [tw_['k'], round(o.centroid.x, 2), round(o.centroid.y, 2), round(math.atan2(e1[1], e1[0]), 4), tw_['L'], tw_['W'], tw_['h']]
-                if tw_['k'] == 'stower': b['lm'] = 'stower'; b['e'] = round(b['g'] + tw_['h'], 2)
-            if dsp.get('model') == 'fugnerka':
-                o = p.minimum_rotated_rectangle; cs = list(o.exterior.coords)[:3]
-                e1 = np.subtract(cs[1], cs[0]); e2 = np.subtract(cs[2], cs[1])
-                if np.linalg.norm(e1) < np.linalg.norm(e2): e1, e2 = e2, e1
-                b['lm'] = 'fugnerka'; b['fg'] = [round(o.centroid.x, 2), round(o.centroid.y, 2), round(math.atan2(e1[1], e1[0]), 4), round(float(np.linalg.norm(e1)), 2)]
         if not own: b['gh'] = 1                  # budova sousedního čtverce (jen kvůli švu)
         buildings.append(b)
         bmd.polygon(P(p.exterior.coords), fill=255)
@@ -1190,15 +1172,6 @@ for _, r in bld.iterrows():
         if dsp:
             top_ = b['e'] + (b['rh'] if b['r'] != 'flat' else 0.0)
             if b.get('dz'): top_ = max(top_, b['e'] + max(q[6] for q in b['dz']))
-            if b.get('tm'):
-                k_, tx, ty, ta, tl, tw2, th = b['tm']; top_ = max(top_, b['g'] + th + (6.0 if k_ == 'kraj' else 0.0))
-                if k_ == 'stower':           # obrys podle modelu věže, ne podle většího půdorysu z OSM
-                    ring_ = [[round(tx + math.cos(ta) * s_ * tl / 2 - math.sin(ta) * t_ * tw2 / 2, 2), round(ty + math.sin(ta) * s_ * tl / 2 + math.cos(ta) * t_ * tw2 / 2, 2)]
-                             for s_, t_ in ((-1, -1), (1, -1), (1, 1), (-1, 1))]
-            if b.get('fg'):
-                fx, fy, fa, fl = b['fg']; top_ = b['g'] + 10.4
-                ring_ = [[round(fx + math.cos(fa) * s_ * fl / 2 - math.sin(fa) * t_ * 12.5, 2), round(fy + math.sin(fa) * s_ * fl / 2 + math.cos(fa) * t_ * 12.5, 2)]
-                         for s_, t_ in ((-1, -1), (1, -1), (1, 1), (-1, 1))]
         binfo.append({'id': bid, 'oid': key, 'name': nm, 'cls': CLS_CZ.get(c, 'budova' if not c else c), 'floors': floors,
                       'h': round(total, 1), 'roof': rs, 'addr': adrs, 'lon': round(float(lon), 6), 'lat': round(float(lat), 6),
                       'ring': ring_, 'top': round(top_, 2), 'base': round(base, 2)})
@@ -1339,10 +1312,6 @@ buses = []
 for a, e, k in UP['buses']:
     x1, y1 = to_local(a[1], a[0]); x2, y2 = to_local(e[1], e[0]); x, y = (x1 + x2) / 2, (y1 + y2) / 2
     if AREA.contains(Point(x, y)): buses.append([round(x, 2), round(y, 2), round(float(ground(x, y)), 2), round(math.atan2(y2 - y1, x2 - x1), 3), k])
-dino = []
-if 'dino' in UP:
-    x, y = to_local(UP['dino']['lon'], UP['dino']['lat'])
-    if AREA.contains(Point(x, y)): dino.append([round(x, 2), round(y, 2), round(GND_DOM[UP['dino']['dom']] + UP['dino']['h'], 2), round(math.radians(UP['dino']['a']), 3)])
 portals = [[round(x, 2), round(y, 2), round(float(ground(x, y)), 2), round(a, 3)] for x, y, a in portals if AREA.contains(Point(x, y))]
 print({k: len(v) for k, v in props.items()}, 'aut', len(cars), {k: len(v) for k, v in lines_out.items()})
 
@@ -1576,7 +1545,7 @@ TOP = max([b['e'] + b['rh'] for b in buildings] + [t[2] + t[3] for t in trees] +
 json.dump({'chunk': CHUNK, 'center': [CX, CY], 'half': HALF, 'step': STEP, 'n': N, 'hmin': HMIN, 'heights': [round(float(v), 2) for v in H.ravel()],
            'ms': MS, 'hext': [round(float(v), 2) for v in HX.ravel()], 'nb': NB, 'margin': geo.MARGIN, 'skirt': geo.skirt_edges(CHUNK),
            'floor': geo.FLOOR, 'top': round(TOP, 1),
-           'buildings': buildings, 'trees': trees, 'props': props, 'cars': cars, 'buses': buses, 'portals': portals, 'dino': dino, 'lines': lines_out,
+           'buildings': buildings, 'trees': trees, 'props': props, 'cars': cars, 'buses': buses, 'portals': portals, 'lines': lines_out,
            'bridges': [{'p': [[*q, round(float(g_), 2)] for q, g_ in zip(deck_line(D), D[3])], 'w': D[4], 'k': D[5], 'c': D[6]} for D in DECKS if D[0].intersects(EXT)]},
           open(f'{OUT}/scene.json', 'w'), separators=(',', ':'))
 

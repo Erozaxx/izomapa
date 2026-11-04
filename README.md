@@ -17,12 +17,18 @@ Autor: [Adam Klatovský](https://www.adamklatovsky.cz/). Je to zdarma. Když vá
 
 ## Jak si udělat svoje město
 
-Počítá se s tím, že to budete dělat s AI agentem, třeba s [Claude Code](https://claude.com/claude-code). V repu je
-`CLAUDE.md`, návod přímo pro AI. Stačí naklonovat repo, otevřít ho v agentovi a napsat:
+Počítá se s tím, že to budete dělat s AI agentem. Vyzkoušené je to s [Claude Code](https://claude.com/claude-code),
+jiní agenti (třeba Codex) by měli zvládnout totéž, ale nezkoušel jsem to. V repu je `CLAUDE.md` (a `AGENTS.md` s odkazem
+na něj), návod přímo pro AI. Stačí repo stáhnout, otevřít ho v agentovi a napsat:
 
-> Udělej mi Chrastavu stejně jako Liberec.
+```sh
+git clone https://github.com/adamklatovsky/izomapa.git
+cd izomapa
+```
 
-Agent založí město, stáhne data, postaví mapu a ukáže vám náhled. Potom s ním ladíte to, co z dat poznat nejde:
+> Udělej mi izometrickou mapu Chrastavy.
+
+Místo Chrastavy napište svoje město. Agent založí město, stáhne data, postaví mapu a ukáže vám náhled. Potom s ním ladíte to, co z dat poznat nejde:
 kostely, radnici, zámek, příběhy míst.
 
 > **Pozor: výsledek je potřeba projít.** Otevřená data mají chyby a AI je dělá taky: budova na špatném místě,

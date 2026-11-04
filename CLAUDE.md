@@ -1,6 +1,6 @@
 # izomapa – návod pro AI agenta
 
-Uživatel chce izometrickou pixel-art mapu svého města („udělej mi Chrastavu stejně jako Liberec“). Předloha je
+Uživatel chce izometrickou pixel-art mapu svého města („udělej mi izometrickou mapu Chrastavy“). Předloha je
 https://izomapa.fun (Liberec). Liberec sám nedělej, ten si autor spravuje sám: když o něj uživatel požádá, nabídni
 jiné město. Komunikuj česky, věcně, a před dlouhými kroky řekni, kolik budou trvat.
 
@@ -36,7 +36,7 @@ Automaticky z dat vyjde celé město. Ručně je potřeba:
     `win` styl oken, `face` [lat, lon] bodu, ke kterému je průčelí (náměstí),
   - `towers` [{`at` front/back/c/n/s/e/w…, `side` posun podél průčelí, `w`, `h`, `top` spire/helm/tiered/dome/pyramid/cone/none,
     `to` výška špičky, `tc` barva, `clock`, `round`, `stone`, `ruin`}], `chimneys`, `blocks` (nástavby), `canopy`, `skylights`,
-  - `lm` vlastní model z `render.html` (`radnice`, `obrazek`, `jested`, `stower`, `fugnerka` jsou ukázky, jak model napsat),
+  - `lm` vlastní model z `render.html` (`radnice` je ukázka, jak model napsat),
   - `only`: samostatná stavba bez budovy v datech (zřícenina, rozhledna).
   Napárování na budovu: bod uvnitř půdorysu, jinak největší budova do 25 m (`match_doms` v `prep.py`).
   Ukázka je v `priklady/dominanty.json`.
