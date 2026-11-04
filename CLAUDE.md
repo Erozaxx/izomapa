@@ -80,7 +80,9 @@ Ukazuj uživateli výřezy před a po.
   Nájezdy (žádné „skokánky“): mostovka pokračuje do navazující cesty stejného druhu (i když most končí uprostřed segmentu, až 8 kusů / 200 m)
   a výška nad terénem klesá nejvýš o `GRADE` (silnice 6 %, trať 3 %, lávka 8 %) – nájezd tak kopíruje svah. Ta část cesty se pak
   nekreslí do terénu (auta jedou po mostovce). Navazující kusy jednoho mostu se nejdřív spojí (linemerge). Bez navazující cesty
-  konec přistane strměji (max. 20 %). Silnice: boky, betonové zábradlí, pilíře po 22 m, středová čára; lávky úzké se sloupkovým
+  konec přistane strměji (max. 20 %). V `render.html` je mostovka souvislý pás (pokos na ohybech, výška vyhlazená); do 2,5 m nad
+  terénem je to zemní násyp se svahem 1:0,5 bez zábradlí a pilířů; kde se dotýká jiná mostovka (`covered`), boky a zábradlí se nekreslí.
+  Šířka silnic: `rwidth` v `prep.py` (jednosměrný pás dvoupásové silnice 60 %, sjezd `link` max. 5 m). Silnice: boky, betonové zábradlí, pilíře po 22 m, středová čára; lávky úzké se sloupkovým
   zábradlím. Auta jedou po mostovce (`roads` v info_src), MHD z jízdních řádů přes `decks` v overlay.json (`deckZ` v app.html).
   Tunel kratší než 60 m je podjezd: kreslí se jako cesta (nad ním vede most), delší tunely se nekreslí.
 - `render.html` + `render.mjs`: three.js v headless Chromiu po dlaždicích, varianty `spring summer autumn winter lights`.

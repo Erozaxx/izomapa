@@ -3,7 +3,12 @@
 Izometrická pixel-art mapa českého města z otevřených dat, ve stylu SimCity 2000. Celé město s budovami, výškami
 změřenými laserem, lesy, poli, ročními obdobími, nocí, počasím a MHD podle jízdních řádů.
 
-Ukázka: **[izomapa.fun](https://izomapa.fun)**, izometrický Liberec. Ten si dál vyvíjím a starám se o něj sám, proto
+**Živá ukázka: [izomapa.fun](https://izomapa.fun)**, izometrický Liberec. Otevřete si ji a projděte, jak hotová mapa
+vypadá a co umí (roční období, noc, počasí, jezdící MHD, klikací budovy).
+
+[![Izometrický Liberec na izomapa.fun – klikněte pro živou mapu](priklady/liberec.webp)](https://izomapa.fun)
+
+Liberec si dál vyvíjím a starám se o něj sám, proto si dál vyvíjím a starám se o něj sám, proto
 tu nejsou jeho ručně vyladěné stavby, příběhy míst ani hra Najdi Vildu. Prosím, nedělejte další Liberec. Postavte si
 svoje město. Tenhle repozitář je přesně na to.
 
@@ -80,7 +85,9 @@ npm run nahled                      # náhled na http://localhost:8000
 
 **Mosty a lávky** jsou skutečné 3D mostovky: nad silnicí nebo tratí mají podjezdnou výšku a nájezdy na ně vedou
 pozvolna po navazující silnici (stoupání do 6 %, u trati 3 %), takže nevypadají jako skokánky. Auta i MHD po nich
-jezdí nahoře. Kratší podjezdy pod silnicí nebo tratí jsou vidět jako cesta, nad kterou vede most.
+jezdí nahoře. Mostovka je souvislý pás (bez zubů a mezer na ohybech), nízké nájezdy jsou zemní násyp s travnatým
+svahem a souběžné mostovky (dva jednosměrné pásy) nemají zábradlí mezi sebou. Jednosměrný pás dvoupásové silnice
+je užší než obousměrná silnice a sjezdy mají jeden pruh. Kratší podjezdy pod silnicí nebo tratí jsou vidět jako cesta, nad kterou vede most.
 
 **Příběhy míst se samy negenerují.** Mapa je bez nich úplně v pořádku. Vzniknou jen tehdy, když o ně agenta
 požádáte. Návod mu ukládá psát jen z ověřených zdrojů (web obce, Památkový katalog, Wikipedie) a nic si nevymýšlet,

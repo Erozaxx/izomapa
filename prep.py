@@ -357,6 +357,15 @@ seg = pd.DataFrame(_rows).reset_index(drop=True)
 RW = {'trunk': 12, 'primary': 10, 'secondary': 9, 'tertiary': 8, 'residential': 6, 'unclassified': 6,
       'living_street': 5, 'service': 3.6, 'pedestrian': 4, 'track': 3, 'footway': 1.8, 'path': 1.6,
       'cycleway': 2, 'steps': 2, 'bridleway': 1.6, 'unknown': 3}
+def rwidth(r):
+    """šířka silnice: RW je obousměrná; jednosměrný pás dvoupásové silnice ~60 %, sjezd (link) jeden pruh 5 m"""
+    w = RW.get(r['class'], 3)
+    if r['class'] not in ('trunk', 'primary', 'secondary', 'tertiary'): return w
+    if str(r.get('subclass')) == 'link': return min(w, 5.0)
+    acc = r.get('access_restrictions')
+    oneway = acc is not None and not isinstance(acc, float) and any(
+        a.get('access_type') == 'denied' and (a.get('when') or {}).get('heading') == 'backward' and a.get('between') is None for a in acc)
+    return round(w * 0.6, 1) if oneway else w
 RCLS = {'track': 'dirt', 'path': 'dirt', 'bridleway': 'dirt', 'footway': 'footway', 'cycleway': 'footway',
         'steps': 'paved', 'pedestrian': 'cobble'}
 DRIVE = {'trunk', 'primary', 'secondary', 'tertiary', 'residential', 'unclassified', 'living_street', 'service'}
@@ -364,7 +373,7 @@ roads = []
 for _, r in seg.iterrows():
     c = r['class']
     if r.subtype == 'rail': roads.append((0, r.geom, 'rail', 3, sname(r))); continue
-    if c in RW: roads.append((RW[c], r.geom, c, RW[c], sname(r)))
+    if c in RW: w_ = rwidth(r); roads.append((w_, r.geom, c, w_, sname(r)))
 # ---------------- mosty a lávky: výška mostovky a nájezdy ----------------
 # Mostovka nad silnicí/tratí/vodou musí mít podjezdnou výšku. Aby to nebyl „skokánek“, nájezd se rozloží do navazující
 # cesty se stoupáním nejvýš GRADE (silnice 6 %, trať 3 %, lávka 8 %); ta část cesty se pak nekreslí do terénu, ale jako mostovka.
@@ -426,7 +435,7 @@ for g0, r in bridge_segs:
         if not l.intersects(DRAWBOX): continue
         c = r['class']
         kind = 'rail' if r.subtype == 'rail' else 'foot' if c in FOOT else 'road'
-        w = 4.5 if kind == 'rail' else RW.get(c, 3)
+        w = 4.5 if kind == 'rail' else rwidth(r)
         bc = [q[:2] for q in l.coords]
         def _dir(a, b):
             n_ = math.dist(a, b) or 1; return ((a[0] - b[0]) / n_, (a[1] - b[1]) / n_)
