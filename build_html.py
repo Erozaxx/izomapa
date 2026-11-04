@@ -9,6 +9,7 @@ E = lambda t: html.escape(t or '', quote=True)
 fill = {
     'TITULEK': E(M['titulek']), 'POPIS': E(M['popis']), 'MESTO': E(M['nazev']), 'H1_A': E(M['h1'][0]), 'H1_B': E(M['h1'][1]),
     'PODTITUL': E(M['podtitul']),
+    'HLASENI': 'true' if M.get('hlaseni') else 'false',
     'MHD_ZDROJ': f', jízdní řády MHD © <a href="{E(mhd["zdroj_url"])}" target="_blank" rel="noopener">{E(mhd["zdroj"])}</a>'
                  if mhd.get('gtfs') and mhd.get('zdroj') else '',
 }
@@ -43,4 +44,6 @@ open('site/index.html', 'w', encoding='utf-8').write(page)
 open('site/robots.txt', 'w').write('User-agent: *\nAllow: /\n' + (f'Sitemap: {SITE_URL}/sitemap.xml\n' if SITE_URL else ''))
 if SITE_URL:
     open('site/sitemap.xml', 'w').write(f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>{SITE_URL}/</loc></url></urlset>\n')
+if M.get('hlaseni'):                                  # volitelná administrace hlášení (server v hlaseni/)
+    open('site/admin.html', 'w', encoding='utf-8').write(open('hlaseni/admin.html', encoding='utf-8').read())
 print('site/index.html', len(page))

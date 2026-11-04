@@ -68,13 +68,23 @@ npm run nahled                      # náhled na http://localhost:8000
 | automaticky z dat | ručně (s AI, podle fotek a ortofota) |
 |---|---|
 | všechny budovy z OpenStreetMap s půdorysem | tvar dominant: věže, kopule, barvy (`assets/dominanty.json`) |
-| skutečné výšky budov a tvar střech (laser ČÚZK) | příběhy míst (`mista.json`) |
+| skutečné výšky budov a tvar střech (laser ČÚZK) | příběhy míst (`mista.json`), jen když o ně požádáte |
 | les jen tam, kde opravdu je (ortofoto ČÚZK) | oprava chyb v OpenStreetMap |
 | pole s plodinou podle ročního období, louky (ZABAGED) | vlastní modely zvláštních staveb |
 | terén, voda, silnice, koleje, sjezdovky | |
+| mosty a lávky ve 3D s pozvolnými nájezdy, krátké podjezdy | |
 | 4 roční období, noc, déšť, sníh, mlha | |
 | auta, MHD podle jízdních řádů (GTFS), lyžaři | |
 | klikací budovy s adresou, hledání, názvy částí obce | |
+| | hlášení nepřesností od lidí s administrací (volitelný server, `hlaseni/`) |
+
+**Mosty a lávky** jsou skutečné 3D mostovky: nad silnicí nebo tratí mají podjezdnou výšku a nájezdy na ně vedou
+pozvolna po navazující silnici (stoupání do 6 %, u trati 3 %), takže nevypadají jako skokánky. Auta i MHD po nich
+jezdí nahoře. Kratší podjezdy pod silnicí nebo tratí jsou vidět jako cesta, nad kterou vede most.
+
+**Příběhy míst se samy negenerují.** Mapa je bez nich úplně v pořádku. Vzniknou jen tehdy, když o ně agenta
+požádáte. Návod mu ukládá psát jen z ověřených zdrojů (web obce, Památkový katalog, Wikipedie) a nic si nevymýšlet,
+ale i tak se může splést, proto fakta před zveřejněním ověřte.
 
 ## Data a licence
 
@@ -122,8 +132,29 @@ render.html     renderer (three.js), render.mjs ho pouští po dlaždicích v Ch
 dzi.py          dlaždice -> Deep Zoom pyramidy (WebP) do site/tiles/
 overlay.py      klikací vrstva: obrysy budov, adresy, ulice, místa, doprava
 mhd.py          jízdní řády GTFS -> site/mhd.json
+hlaseni/        volitelný server: hlášení nepřesností a administrace /admin
 web/app.html    prohlížeč, build_html.py z něj udělá site/index.html
 ```
+
+## Hlášení nepřesností od lidí (volitelné)
+
+Na mapě si lidé rychle všimnou, co nesedí. Proto je k dispozici i sběr připomínek: v kartě budovy nebo místa je
+tlačítko **Nahlásit nepřesnost**, člověk napíše pár slov a vy je pak vidíte v jednoduché administraci na `/admin`
+(seskupené podle budovy, s počtem hlášení, odkazem „Na mapě“ a stavy nové / vyřešené / zamítnuté).
+
+Statický web sám hlášení uložit neumí, potřebuje malý server. Hotový je ve složce `hlaseni/` pro Cloudflare Workers
+s databází D1 (na malou mapu stačí bezplatný tarif). Jinde to jde taky, `hlaseni/worker.js` je krátký a agent ho
+přepíše pro jiný hosting.
+
+1. V `mesto.json` nastavte `"hlaseni": true` a spusťte `python build_html.py` (v mapě se objeví tlačítko a do `site/`
+   přibude `admin.html`).
+2. `cp hlaseni/wrangler.example.jsonc wrangler.jsonc`, doplňte název a `npx wrangler d1 create izomapa-hlaseni`
+   (vypíše `database_id`, to patří do `wrangler.jsonc`).
+3. `npx wrangler d1 migrations apply izomapa-hlaseni --remote`
+4. `npx wrangler secret put ADMIN_PASSWORD` (heslo do administrace) a `npx wrangler deploy`.
+
+Ukládá se jen text hlášení, místo na mapě a otisk (hash) IP adresy kvůli limitu 3 hlášení za hodinu, ne IP samotná.
+Bez `"hlaseni": true` se tlačítko nezobrazí a web zůstane čistě statický.
 
 ## Známé pasti
 
@@ -144,4 +175,4 @@ Pokud chcete mapu pro svoje město na klíč, napište na [info@adamklatovsky.cz
 Když vám repo ušetřilo práci, můžete mi [koupit kafe ☕](https://donate.stripe.com/3cI6oA0PE7u65Y9cim8g000).
 Budu rád, když v mapě necháte nenápadný odkaz „Vytvořeno nástrojem izomapa“ (je v O projektu a v nápovědě).
 
-Prosím, nepojmenovávejte svoje projekty „Izomapa“ a nepoužívejte doménu izomapa.fun. Pojmenujte je po svém městě.
+Prosím, nepojmenovávejte svoje projekty „Izomapa“ a nepoužívejte domény izomapa.fun a izomapa.cz. Pojmenujte je po svém městě.

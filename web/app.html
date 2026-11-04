@@ -149,6 +149,12 @@ dialog.help ol.vd-list { margin: 0; padding-left: 22px; } ol.vd-list li { margin
   background: var(--panel); border: 2px solid var(--edge); padding: 8px 14px; font-size: .86rem; box-shadow: 4px 4px 0 rgba(0, 0, 0, .35); }
 .realtime { display: flex; gap: 8px; align-items: center; font-size: .82rem; color: var(--muted); margin-top: 6px; cursor: pointer; }
 .realtime input { accent-color: var(--grass); }
+.card .report summary { cursor: pointer; font-size: .82rem; color: var(--muted); }
+.card .report form { display: grid; gap: 6px; margin-top: 6px; }
+.card .report textarea { font: inherit; font-size: .86rem; background: var(--panel-2); color: var(--ink); border: 2px solid var(--edge); padding: 4px 6px; }
+.card .report #repMsg { font-size: .86rem; color: var(--muted); }
+.card .report #repMsg.rep-ok { color: #ff9a3c; font-weight: 700; font-size: .95rem; }
+.card .report #repMsg.rep-err { color: #ff7a5c; font-weight: 700; }
 .card .links { display: flex; gap: 12px; flex-wrap: wrap; font-size: .86rem; }
 
 .controls {
@@ -290,6 +296,14 @@ dialog.help ol.vd-list { margin: 0; padding-left: 22px; } ol.vd-list li { margin
   <p id="cardText" hidden></p>
   <dl id="cardDl"></dl>
   <div class="links" id="cardLinks"></div>
+  <details class="report" id="report" hidden>
+    <summary>Nahlásit nepřesnost</summary>
+    <form id="reportForm">
+      <textarea id="repNote" rows="3" maxlength="500" required placeholder="Co tu nesedí se skutečností?"></textarea>
+      <button class="px-btn" type="submit">Odeslat</button>
+      <span id="repMsg" role="status"></span>
+    </form>
+  </details>
 </section>
 
 <div class="minimap" id="minimap">
@@ -630,7 +644,31 @@ dialog.help ol.vd-list { margin: 0; padding-left: 22px; } ol.vd-list li { margin
     links.append(a, s);
     $('card').style.transform = '';
     $('card').hidden = false;
+    setReport(`pt:${lat.toFixed(5)},${lon.toFixed(5)}`, title, lon, lat);     // výchozí cíl hlášení = místo, budova ho přepíše
   }
+  // hlášení nepřesností: jen když je zapnuté v mesto.json ("hlaseni": true) a běží server z hlaseni/
+  const HLASENI = {{HLASENI}};
+  $('report').hidden = !HLASENI;
+  let repTarget = null;
+  const repMsg = (t, cls) => { $('repMsg').textContent = t; $('repMsg').className = cls ? 'rep-' + cls : ''; };
+  function setReport(target, title, lon, lat) {
+    repTarget = { target, title, lon, lat };
+    $('report').open = false; repMsg('', ''); $('repNote').value = '';
+  }
+  $('reportForm').addEventListener('submit', async (e) => {
+    e.preventDefault(); if (!repTarget) return;
+    if ($('repNote').value.trim().length < 3) { repMsg('Napište prosím, co tu nesedí (aspoň pár slov).', 'err'); return; }
+    $('reportForm').querySelector('button').disabled = true;
+    repMsg('Odesílám…', '');
+    try {
+      const r = await fetch('api/report', { method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ ...repTarget, note: $('repNote').value.trim() }) });
+      const d = await r.json().catch(() => ({}));
+      if (d.ok) { $('repNote').value = ''; repMsg('Díky! Hlášení je odeslané.', 'ok'); }
+      else repMsg(d.msg || 'Hlášení se nepovedlo odeslat. Zkuste to prosím za chvíli.', 'err');
+    } catch { repMsg('Hlášení teď nejde odeslat (bez připojení?). Zkuste to prosím později.', 'err'); }
+    $('reportForm').querySelector('button').disabled = false;
+  });
   // speciální místo k budově: špendlík místa leží v obrysu budovy a budova je do 35 m (OSM má jiné názvy, „sv. Jan Křtitel“)
   const geoM = (lat, lon, p) => Math.hypot(lat - p.lat, (lon - p.lon) * Math.cos(p.lat * Math.PI / 180)) * 111320;
   function placeOf(b) {
@@ -647,6 +685,7 @@ dialog.help ol.vd-list { margin: 0; padding-left: 22px; } ol.vd-list li { margin
     showCard({ title, text: story, lon: b.lon, lat: b.lat, k: b.k, rows: [
       ['Adresa', (b.addr || []).join(', ')], ['Typ', nm ? b.cls : null],
     ] });
+    setReport(b.oid ? 'b:' + b.oid : b.id, [title, (b.addr || [])[0]].filter(Boolean).join(', '), b.lon, b.lat);
   }
   function showPoint(ix, iy) {
     state.sel = null;

@@ -52,6 +52,10 @@ Rychlá kontrola jednoho místa bez celého čtverce:
 `python prep.py data_c0_-1 0,-1` a `node render.mjs mpp=0.2 dir=build/c0_-1 out=build/test season=summer alpha=1 "tiles=7_3;7_4"`.
 Ukazuj uživateli výřezy před a po.
 
+- **Hlášení nepřesností** (volitelné): `"hlaseni": true` v `mesto.json` zobrazí v kartě tlačítko a `build_html.py`
+  zkopíruje `hlaseni/admin.html` do `site/`. Potřebuje server z `hlaseni/` (Cloudflare Worker + D1, návod v README).
+  Nabídni to, až bude mapa veřejně; nasazení a heslo dělá uživatel sám. Jiný hosting = přepsat `hlaseni/worker.js`.
+
 ## Pravidla
 
 - **Nikdy neobkresluj ze screenshotů Google Maps, Apple Maps ani Mapy.cz** (podmínky to zakazují). Tvary, barvy střech a
@@ -60,7 +64,8 @@ Ukazuj uživateli výřezy před a po.
 - Fotky a podklady uživatele do gitu nepatří (`fotky/`, `podklady/` jsou v `.gitignore`).
 - Patička nápovědy s uvedením zdrojů dat (OpenStreetMap, ČÚZK, dopravce) musí zůstat.
 - Funguje jen v Česku (ČÚZK). Pro jinou zemi řekni, co chybí: laserové výšky, ortofoto, ZABAGED.
-- Hosting řeší uživatel. Výsledek je statická složka `site/`. Doporuč jen, ať zvolí hosting, který zvládne hodně souborů.
+- Hosting řeší uživatel. Výsledek je statická složka `site/`. Doporuč jen, ať zvolí hosting, který zvládne hodně souborů
+  (hlášení nepřesností potřebují server, viz výše).
 
 ## Jak to funguje (pro úpravy kódu)
 
