@@ -177,7 +177,6 @@ Bez `"hlaseni": true` se tlačítko nezobrazí a web zůstane čistě statický.
 ## Podpora a kafe
 
 Repozitář dávám k dispozici, jak je. Podporu neposkytuju, na issues a pull requesty se podívám, až budu mít čas.
-Pokud chcete mapu pro svoje město na klíč, napište na [info@adamklatovsky.cz](mailto:info@adamklatovsky.cz).
 
 Když vám repo ušetřilo práci, můžete mi [koupit kafe ☕](https://donate.stripe.com/3cI6oA0PE7u65Y9cim8g000).
 Budu rád, když v mapě necháte nenápadný odkaz „Vytvořeno nástrojem izomapa“ (je v O projektu a v nápovědě).
