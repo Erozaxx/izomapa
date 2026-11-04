@@ -304,10 +304,12 @@ for _, r in wat.iterrows():
         line(g, C['stream'], 6, block=True)
 
 seg = load('segment')
+TUNNEL_MIN = 60.0     # kratší „tunel“ je podjezd pod silnicí nebo tratí: kreslí se jako cesta, nad ní vede most
 def tunnel_parts(r):
-    """části segmentu mimo tunel (0..1); tunely se nekreslí, silnice je pod zemí"""
+    """části segmentu mimo tunel (0..1); dlouhé tunely se nekreslí, silnice je pod zemí"""
     fl = r.road_flags if r.road_flags is not None else []
     tn = [f.get('between') for f in fl if 'is_tunnel' in list(f.get('values'))]
+    tn = [t for t in tn if (1.0 if t is None else float(t[1]) - float(t[0])) * r.geom.length >= TUNNEL_MIN]
     if not tn: return None
     if any(t is None for t in tn): return []
     out, a = [], 0.0
@@ -328,6 +330,29 @@ for _, r in seg.iterrows():
                 if 0 < t < 1:
                     p0 = r.geom.interpolate(t, normalized=True); p1 = r.geom.interpolate(max(0, min(1, t + sg * 0.004)), normalized=True)
                     portals.append((p0.x, p0.y, math.atan2(p1.y - p0.y, p1.x - p0.x)))
+seg = pd.DataFrame(_rows).reset_index(drop=True)
+# mosty a lávky: úsek označený is_bridge se nekreslí do terénu, ale postaví se jako mostovka (scene.bridges)
+BRIDGE_MIN = 8.0      # kratší „most“ (propustek nad potokem) zůstane obyčejnou cestou
+def bridge_parts(r):
+    fl = r.road_flags if isinstance(r.road_flags, (list, np.ndarray)) else []
+    br = [f.get('between') for f in fl if 'is_bridge' in list(f.get('values'))]
+    if not br: return None
+    rng = sorted((0.0, 1.0) if t is None else (float(t[0]), float(t[1])) for t in br)
+    out, a = [], 0.0
+    for t0, t1 in rng:
+        if t0 > a: out.append((a, t0, False))
+        out.append((max(a, t0), t1, True)); a = max(a, t1)
+    if a < 1: out.append((a, 1.0, False))
+    return out
+_rows, bridge_segs = [], []
+for _, r in seg.iterrows():
+    bp = bridge_parts(r)
+    if bp is None: _rows.append(r); continue
+    for a, b_, isb in bp:
+        if b_ - a < 1e-6: continue
+        g = shapely.ops.substring(r.geom, a, b_, normalized=True)
+        if isb and g.length >= BRIDGE_MIN: bridge_segs.append((g, r)); continue
+        q = r.copy(); q['geom'] = g; _rows.append(q)
 seg = pd.DataFrame(_rows).reset_index(drop=True)
 RW = {'trunk': 12, 'primary': 10, 'secondary': 9, 'tertiary': 8, 'residential': 6, 'unclassified': 6,
       'living_street': 5, 'service': 3.6, 'pedestrian': 4, 'track': 3, 'footway': 1.8, 'path': 1.6,
@@ -405,6 +430,44 @@ for l, w, c, n in drive_lines:
         rx, ry = ty, -tx                          # pravá strana
         cd.line(P([(q.x, q.y), (q.x + rx * (w / 2 - 0.3), q.y + ry * (w / 2 - 0.3))]), fill=C['marking'], width=max(1, round(0.45 / TEX_RES)))
 all_lines = [(l, w, c, n) for _, g, c, w, n in roads if c != 'rail' for l in lines(g)]
+
+# ---------------- mosty a lávky: výška mostovky ----------------
+# konce mostu leží na terénu, mezi nimi přímka; kde by byla mostovka moc nízko (nad silnicí, tratí, vodou),
+# zvedne se oblouk (4t(1-t)), aby měla podjezdnou výšku
+FOOT = {'footway', 'path', 'cycleway', 'steps', 'pedestrian', 'bridleway', 'track'}
+_under = shapely.STRtree([g for _, g, c, w, _n in roads])
+_water = shapely.unary_union([r.geom.buffer(4) for _, r in wat.iterrows()] or [Point(1e9, 1e9)])
+DECKS = []                                  # (čára, vzdálenosti, výšky mostovky, výšky terénu, šířka, druh, třída, název)
+for g0, r in bridge_segs:
+    for l in lines(g0):
+        if not l.intersects(DRAWBOX): continue
+        c = r['class']
+        kind = 'rail' if r.subtype == 'rail' else 'foot' if c in FOOT else 'road'
+        w = 4.5 if kind == 'rail' else RW.get(c, 3)
+        lz = l.segmentize(4.0); xy = np.array(lz.coords)[:, :2]
+        d = np.concatenate([[0], np.cumsum(np.hypot(*np.diff(xy, axis=0).T))]); L = d[-1]
+        gz = ground(xy[:, 0], xy[:, 1]); t = d / L
+        lin = gz[0] + (gz[-1] - gz[0]) * t + 0.15
+        req = gz + 0.8
+        ends = l.boundary.buffer(1.5)
+        cross = [_under.geometries[j] for j in _under.query(l) if _under.geometries[j].intersects(l) and not _under.geometries[j].intersects(ends)]
+        cross = shapely.unary_union(cross).buffer(w / 2 + 3) if cross else None     # cesty a tratě, které vedou pod mostem
+        for i, (x, y) in enumerate(xy):
+            pt = Point(x, y)
+            if cross is not None and cross.contains(pt): req[i] = gz[i] + (6.0 if kind == 'rail' else 5.2)
+            elif _water.contains(pt): req[i] = gz[i] + (1.0 if kind == 'foot' else 1.3)
+        req[0], req[-1] = lin[0], lin[-1]              # konce navazují na silnici v terénu
+        z = np.maximum(lin, req)                       # přímka mezi konci, nad překážkami podjezdná výška
+        hull = []                                      # horní konvexní obálka: mostovka bez propadů (jako skutečný most)
+        for pt_ in zip(d, z):
+            while len(hull) >= 2 and (hull[-1][0] - hull[-2][0]) * (pt_[1] - hull[-2][1]) - (hull[-1][1] - hull[-2][1]) * (pt_[0] - hull[-2][0]) >= 0: hull.pop()
+            hull.append(pt_)
+        z = np.interp(d, [q[0] for q in hull], [q[1] for q in hull])
+        DECKS.append((lz, d, z, gz, w, kind, c, sname(r)))
+print('mostů', len(DECKS), 'z toho lávek', sum(k[5] == 'foot' for k in DECKS))
+def deck_line(D):
+    lz, d, z = D[0], D[1], D[2]
+    return [[round(x, 1), round(y, 1), round(float(h), 2)] for (x, y), h in zip(np.array(lz.coords)[:, :2], z)]
 drive_tree = shapely.STRtree([l for l, *_ in drive_lines])
 all_tree = shapely.STRtree([l for l, *_ in all_lines])
 
@@ -1434,7 +1497,8 @@ TOP = max([b['e'] + b['rh'] for b in buildings] + [t[2] + t[3] for t in trees] +
 json.dump({'chunk': CHUNK, 'center': [CX, CY], 'half': HALF, 'step': STEP, 'n': N, 'hmin': HMIN, 'heights': [round(float(v), 2) for v in H.ravel()],
            'ms': MS, 'hext': [round(float(v), 2) for v in HX.ravel()], 'nb': NB, 'margin': geo.MARGIN, 'skirt': geo.skirt_edges(CHUNK),
            'floor': geo.FLOOR, 'top': round(TOP, 1),
-           'buildings': buildings, 'trees': trees, 'props': props, 'cars': cars, 'buses': buses, 'portals': portals, 'dino': dino, 'lines': lines_out},
+           'buildings': buildings, 'trees': trees, 'props': props, 'cars': cars, 'buses': buses, 'portals': portals, 'dino': dino, 'lines': lines_out,
+           'bridges': [{'p': [[*q, round(float(g_), 2)] for q, g_ in zip(deck_line(D), D[3])], 'w': D[4], 'k': D[5], 'c': D[6]} for D in DECKS if D[0].intersects(EXT)]},
           open(f'{OUT}/scene.json', 'w'), separators=(',', ':'))
 
 # podklady pro interaktivní vrstvu prohlížeče
@@ -1450,6 +1514,7 @@ for n, ls in streets.items():
     street_out.append({'name': n, 'x': round(pt.x, 1), 'y': round(pt.y, 1), 'z': round(float(ground(pt.x, pt.y)), 1)})
 graph = [{'p': [[round(x, 1), round(y, 1), round(float(z), 1)] for (x, y), z in zip(l.coords, ground(*np.array(l.coords).T))],
           'c': c, 'n': n} for l0, w, c, n in drive_lines for l in lines(l0.intersection(AREA.intersection(CLIP.buffer(-4)))) if l.length > 2]   # auta jen uvnitř mapy, přes šev ano
+graph += [{'p': deck_line(D), 'c': D[6], 'n': D[7]} for D in DECKS if D[6] in DRIVE and AREA.intersects(D[0])]   # po mostech ve výšce mostovky
 stops = [{'name': sname(r), 'x': r.geom.x, 'y': r.geom.y} for _, r in inf.iterrows()
          if r['class'] == 'bus_stop' and AREA.contains(r.geom) and sname(r)]
 def zline(l):
@@ -1470,13 +1535,15 @@ for l in PISTE:
         if q.length < 30: continue
         z = zline(q); piste_out.append(z if z[0][2] >= z[-1][2] else z[::-1])
 TRAM = [l for _, r in seg.iterrows() if r.subtype == 'rail' and r['class'] == 'tram' for l in lines(r.geom)]
-tram_out = [zline(q) for l in TRAM for q in lines(l.intersection(AREA)) if q.length > 1]
+tram_out = [zline(q) for l in TRAM for q in lines(l.intersection(AREA)) if q.length > 1] + \
+           [deck_line(D) for D in DECKS if D[6] == 'tram' and AREA.intersects(D[0])]
 _tt = shapely.STRtree(TRAM) if TRAM else None
 tstop_out = [[round(r.geom.x, 1), round(r.geom.y, 1), sname(r)] for _, r in inf.iterrows() if _tt is not None and r['class'] == 'stop_position'
              and r.geom.geom_type == 'Point' and sname(r) and AREA.contains(r.geom) and len(_tt.query(r.geom.buffer(4)))]
 walk_out = [zline(l) for l, w, c, n in all_lines if c in ('footway', 'path', 'pedestrian', 'cycleway') and l.intersects(AREA)
             for l in [l.intersection(AREA)] if l.geom_type == 'LineString' and l.length > 8]
 json.dump({'buildings': binfo, 'chimneys': chimneys, 'streets': street_out, 'roads': graph, 'stops': stops, 'water': water_out, 'walks': walk_out, 'pistes': piste_out, 'trams': tram_out, 'tstops': tstop_out,
+           'decks': [{'p': deck_line(D), 'w': D[4]} for D in DECKS if D[5] != 'foot' and AREA.intersects(D[0])],
            'lamps': props['lamp'], 'ground_small': [[round(float(ground(x, y)), 1) for x in np.linspace(-HALF, HALF, 81)]
                                                      for y in np.linspace(HALF, -HALF, 81)]},
           open(f'{OUT}/info_src.json', 'w'), separators=(',', ':'), ensure_ascii=False)

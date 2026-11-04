@@ -88,6 +88,7 @@ per_chunk = {}
 water = {}
 bus_route = None
 tram_lines, tram_stops = [], []
+decks = []                # mostovky silnic a tratí (svět, výška): MHD z jízdních řádů po nich jede nahoře
 # linky tramvají, když chybí jízdní řády (site/mhd.json): [konečná, konečná, počet vozů na lince]
 TRAM_LINES = [tuple(t) for t in MESTO.get('mhd', {}).get('tramvaje', [])]
 for chunk in chunks:
@@ -152,6 +153,7 @@ for chunk in chunks:
     # sjezdovky pro lyžaře (svět, shora dolů) a koleje tramvají (sešijí se přes švy až po všech čtvercích)
     pistes = [[[round(x + OFF[0], 1), round(y + OFF[1], 1), z] for x, y, z in l] for l in src.get('pistes', [])]
     tram_lines += [[(x + OFF[0], y + OFF[1], z) for x, y, z in l] for l in src.get('trams', [])]
+    decks += [{'p': [[round(x + OFF[0], 1), round(y + OFF[1], 1), z] for x, y, z in d['p']], 'w': d['w']} for d in src.get('decks', [])]
     tram_stops += [(x + OFF[0], y + OFF[1], n) for x, y, n in src.get('tstops', [])]
     # stromy u silnic, kolejí a sjezdovek: auta, tramvaje a lyžaři se za jejich korunami schovají (svět, z terénu, výška, jehličnan)
     sc_ = json.load(open(f'{chunk_dir(chunk)}/scene.json'))
@@ -256,7 +258,7 @@ for a_n, b_n, n_ in TRAM_LINES:
     trams.append({'w': [[round(x, 1), round(y, 1)] for x, y, z in pts], 'p': [list(px(x, y, z)) for x, y, z in pts], 'n': n_,
                   'stops': [list(px(TSTOP[n][0], TSTOP[n][1], 0)[:2]) + [n] for n in st]})
     print('tramvaj', a_n, '–', b_n, round(sum(math.hypot(x1 - x0, y1 - y0) for (x0, y0), (x1, y1) in zip(on, on[1:]))), 'm', len(st), 'zastávek')
-json.dump({'w': W, 'h': H, 'cam': cam, 'districts': districts, 'needs': needs, 'xmas': nam, 'chunks': {CKEY[c]: CHUNKS[c] for c in chunks}, 'bus': bus_route, 'trams': trams,
+json.dump({'w': W, 'h': H, 'cam': cam, 'districts': districts, 'needs': needs, 'xmas': nam, 'chunks': {CKEY[c]: CHUNKS[c] for c in chunks}, 'bus': bus_route, 'trams': trams, 'decks': decks,
            'streets': streets, 'places': places},
           open('site/overlay.json', 'w'), separators=(',', ':'), ensure_ascii=False)
 json.dump(addr_index, open('site/search.json', 'w'), separators=(',', ':'), ensure_ascii=False)   # adresy pro hledání, načte se až při psaní

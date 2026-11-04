@@ -1059,6 +1059,48 @@ function obrazek(b, W, R, X) {
       }
     }
   }
+  // mosty a lávky (prep: scene.bridges, body [x, y, mostovka, terén]): mostovka s boky, zábradlí, pilíře, středová čára
+  for (const br of scene.bridges || []) {
+    const P = br.p, hw = br.w / 2, foot = br.k === 'foot', rail = br.k === 'rail';
+    const th = foot ? 0.45 : 1.1, W = [0, 1, 1, 0];
+    const top = rail ? [0.46, 0.43, 0.39] : foot ? (SEASON_ID === 3 ? [0.86, 0.88, 0.92] : [0.62, 0.56, 0.47]) : [0.38, 0.39, 0.42];
+    const side = foot ? [0.52, 0.47, 0.40] : [0.70, 0.69, 0.66], rcol = foot ? [0.24, 0.25, 0.27] : [0.78, 0.77, 0.74];
+    let run = 0, nextPier = 18;
+    for (let i = 0; i < P.length - 1; i++) {
+      const [x0, y0, z0, g0] = P[i], [x1, y1, z1, g1] = P[i + 1];
+      const len = Math.hypot(x1 - x0, y1 - y0); if (len < 0.05) continue;
+      const ux = (x1 - x0) / len, uy = (y1 - y0) / len, nx = -uy * hw, ny = ux * hw;
+      const A = (x, y, z) => tv(x, y, z);
+      pushQuad(L, A(x0 + nx, y0 + ny, z0), A(x0 - nx, y0 - ny, z0), A(x1 - nx, y1 - ny, z1), A(x1 + nx, y1 + ny, z1), top, W);            // mostovka
+      pushQuad(L, A(x0 + nx, y0 + ny, z0 - th), A(x0 + nx, y0 + ny, z0), A(x1 + nx, y1 + ny, z1), A(x1 + nx, y1 + ny, z1 - th), side, W);  // boky
+      pushQuad(L, A(x1 - nx, y1 - ny, z1 - th), A(x1 - nx, y1 - ny, z1), A(x0 - nx, y0 - ny, z0), A(x0 - nx, y0 - ny, z0 - th), side, W);
+      for (const sg of [1, -1]) {                                                                                                            // zábradlí
+        const ex = nx * sg, ey = ny * sg, tk = (foot ? 0.06 : 0.3) / hw, ix = -ex * tk, iy = -ey * tk;     // ix, iy = tloušťka zábradlí dovnitř
+        const hR = foot ? 1.05 : 0.95;
+        if (foot) {
+          pushQuad(L, A(x0 + ex, y0 + ey, z0 + hR - 0.08), A(x1 + ex, y1 + ey, z1 + hR - 0.08), A(x1 + ex, y1 + ey, z1 + hR), A(x0 + ex, y0 + ey, z0 + hR), rcol, W);
+          for (let d = 0; d < len; d += 2) { const t = d / len; pushBox(L, frameAt(x0 + (x1 - x0) * t + ex * 0.97, y0 + (y1 - y0) * t + ey * 0.97, z0 + (z1 - z0) * t, Math.atan2(uy, ux)), -0.04, 0.04, -0.04, 0.04, 0, hR, rcol, [0, 1, 0, 0]); }
+        } else {
+          pushQuad(L, A(x0 + ex, y0 + ey, z0 - th), A(x1 + ex, y1 + ey, z1 - th), A(x1 + ex, y1 + ey, z1 + hR), A(x0 + ex, y0 + ey, z0 + hR), rcol, W);
+          pushQuad(L, A(x0 + ex + ix, y0 + ey + iy, z0 + hR), A(x1 + ex + ix, y1 + ey + iy, z1 + hR), A(x1 + ex, y1 + ey, z1 + hR), A(x0 + ex, y0 + ey, z0 + hR), rcol.map((v) => v * 1.08), W);
+          pushQuad(L, A(x1 + ex + ix, y1 + ey + iy, z1), A(x1 + ex + ix, y1 + ey + iy, z1 + hR), A(x0 + ex + ix, y0 + ey + iy, z0 + hR), A(x0 + ex + ix, y0 + ey + iy, z0), rcol.map((v) => v * 0.9), W);
+        }
+      }
+      if (!foot && !rail && br.w >= 6) for (let d = 1; d < len - 1; d += 9) {                                                           // středová čára
+        const t0 = d / len, t1 = Math.min(1, (d + 3) / len), q = 0.12;
+        const ax = x0 + (x1 - x0) * t0, ay = y0 + (y1 - y0) * t0, az = z0 + (z1 - z0) * t0 + 0.03, bx = x0 + (x1 - x0) * t1, by = y0 + (y1 - y0) * t1, bz = z0 + (z1 - z0) * t1 + 0.03;
+        pushQuad(L, A(ax - uy * q, ay + ux * q, az), A(ax + uy * q, ay - ux * q, az), A(bx + uy * q, by - ux * q, bz), A(bx - uy * q, by + ux * q, bz), [0.92, 0.92, 0.88], [0, 0, 0, 0]);
+      }
+      if (rail) for (const o of [-0.75, 0.75]) pushQuad(L, A(x0 - uy * (o - 0.07), y0 + ux * (o - 0.07), z0 + 0.12), A(x0 - uy * (o + 0.07), y0 + ux * (o + 0.07), z0 + 0.12),
+        A(x1 - uy * (o + 0.07), y1 + ux * (o + 0.07), z1 + 0.12), A(x1 - uy * (o - 0.07), y1 + ux * (o - 0.07), z1 + 0.12), [0.30, 0.29, 0.28], [0, 0, 0, 0]);
+      run += len;
+      while (run >= nextPier && nextPier < (P.length - 1) * 4 - 6) {                                                                   // pilíře po ~22 m, jen kde je pod mostem místo
+        const t = 1 - (run - nextPier) / len, x = x0 + (x1 - x0) * t, y = y0 + (y1 - y0) * t, z = z0 + (z1 - z0) * t, g = g0 + (g1 - g0) * t;
+        if (z - g > 2.5 && !(foot && br.w < 4 && run < 30)) pushBox(L, frameAt(x, y, g - 0.5, Math.atan2(uy, ux)), -0.7, 0.7, -hw * 0.75, hw * 0.75, 0, z - th - g + 0.5, side.map((v) => v * 0.92), [0, 1, 0, 0]);
+        nextPier += foot ? 15 : 22;
+      }
+    }
+  }
   for (const [x, y, z, a] of scene.portals || []) {           // portál tunelu: betonový rám a tma uvnitř, čelem k silnici
     const f = frameAt(x, y, z, a), W = [0, 1, 0, 0], C = [0.56, 0.55, 0.52];
     pushBox(L, f, -1.5, 0.2, -6.6, 6.6, -0.5, 5.2, [0.05, 0.05, 0.06], W);

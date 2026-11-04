@@ -70,6 +70,11 @@ Ukazuj uživateli výřezy před a po.
   nepravidelné budovy v husté zástavbě) má šikmou střechu, panelák (navazující obdélníky se stejnou hloubkou) plochou;
   plochá střecha také tam, kde laser měří vršek skoro stejně jako medián. Kostel má vždy věž. Garáže = řada malých
   budov bez typu.
+- mosty a lávky: úsek s `is_bridge` (OSM/Overture) delší než 8 m se nemaluje do terénu, ale je 3D mostovka (`scene.bridges`):
+  konce na terénu, mezi nimi přímka, nad cestou nebo tratí pod mostem zvednutá na 5,2 m (trať 6 m), nad vodou trochu nad hladinu,
+  horní konvexní obálka (bez propadů). Silnice: boky, betonové zábradlí, pilíře po 22 m, středová čára; lávky úzké se sloupkovým
+  zábradlím. Auta jedou po mostovce (`roads` v info_src), MHD z jízdních řádů přes `decks` v overlay.json (`deckZ` v app.html).
+  Tunel kratší než 60 m je podjezd: kreslí se jako cesta (nad ním vede most), delší tunely se nekreslí.
 - `render.html` + `render.mjs`: three.js v headless Chromiu po dlaždicích, varianty `spring summer autumn winter lights`.
   Na macOS s GPU (Metal). Výstup se může o odstín lišit mezi běhy, proto se renderuje vždy celý čtverec.
 - `dzi.py`: paleta a Deep Zoom pyramidy (WebP). `compose.py`: složený náhled. `preview.py`: rychlý náhled pro web.
