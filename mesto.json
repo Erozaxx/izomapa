@@ -1,0 +1,30 @@
+{
+ "nazev": "Louka u Litvínova",
+ "titulek": "Izometrická Louka u Litvínova",
+ "h1": [
+  "Izometrická",
+  "Louka u Litvínova"
+ ],
+ "podtitul": "Louka u Litvínova v izometrickém pixel-art světě.",
+ "popis": "Interaktivní izometrická mapa Louky u Litvínova vytvořená z otevřených geografických dat.",
+ "url": "",
+ "stred": [
+  13.628257,
+  50.587523
+ ],
+ "polovina": 1150.0,
+ "ctverce": [
+  [
+   0,
+   0
+  ]
+ ],
+ "href": 294.8,
+ "dno": -54,
+ "mhd": {
+  "gtfs": null,
+  "zdroj": null,
+  "zdroj_url": null
+ },
+ "vanocni_strom": null
+}
