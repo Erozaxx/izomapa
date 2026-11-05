@@ -1,0 +1,38 @@
+{
+ "nazev": "Štěnovice",
+ "titulek": "Izometrické Štěnovice",
+ "h1": [
+  "Izometrické",
+  "Štěnovice"
+ ],
+ "podtitul": "Štěnovice v izometrickém pixel-art světě.",
+ "popis": "Interaktivní izometrická mapa Štěnovic vytvořená z otevřených geografických dat.",
+ "url": "",
+ "stred": [
+  13.408986,
+  49.663747
+ ],
+ "polovina": 1150.0,
+ "ctverce": [
+  [
+   0,
+   1
+  ],
+  [
+   -1,
+   0
+  ],
+  [
+   0,
+   0
+  ]
+ ],
+ "href": 346.8,
+ "dno": -61,
+ "mhd": {
+  "gtfs": null,
+  "zdroj": null,
+  "zdroj_url": null
+ },
+ "vanocni_strom": null
+}
