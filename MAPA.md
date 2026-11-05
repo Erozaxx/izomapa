@@ -54,6 +54,6 @@ Render byl jednou přerušen a po spuštění znovu navázal na hotová data.
 
 ## Losinský potok
 
-- V `mesto.json` (v `.gitignore`, do větve přes `git add -f`) je klíč `potoky: ["Losinský potok"]` a `potok_sirka: 2.5` (m). `prep.py` kreslí potoky z tohoto seznamu čárou jako řeku, ale užší; úseky s tagem tunnel nebo covered vynechává. Ostatní potoky se dál nekreslí (zatrubněné úseky v datech).
-- Data: Overture water, OSM way 81473053, 6,3 km od Lošiny k Úhlavě, v mapě od východního okraje čtverce `[0, 0]` obcí na západ. U ulice V potocích se v bodě 49.6731, 13.4015 napojuje Mlýnský potok (way 81486958), ten zatím není v seznamu. Tvar odpovídá hrubému náčrtu od Toma.
+- V `mesto.json` (v `.gitignore`, do větve přes `git add -f`) je klíč `potoky: ["Losinský potok", "Mlýnský potok"]` a `potok_sirka: 2.5` (m). `prep.py` kreslí potoky z tohoto seznamu čárou jako řeku, ale užší; úseky s tagem tunnel nebo covered vynechává. Ostatní potoky se dál nekreslí (zatrubněné úseky v datech).
+- Data: Overture water, OSM way 81473053, 6,3 km od Lošiny k Úhlavě, v mapě od východního okraje čtverce `[0, 0]` obcí na západ. U ulice V potocích se v bodě 49.6731, 13.4015 napojuje Mlýnský potok (OSM way 81486958, 1,2 km od 13.392, 49.6682 k napojení, a way 81473213, 130 m dál na sever k Úhlavě), je také v seznamu. Jméno je v datech jen u těchto dvou úseků a žádný jiný potok se tak nejmenuje, oba bez tagu tunnel nebo covered. Potok vede u okraje lesa na západní straně zástavby, dotýká se čtverců `[0, 0]`, `[-1, 0]` a (pásem MARGIN) `[0, 1]`. Tvar odpovídá hrubému náčrtu od Toma.
 - Silnice se kreslí přes potok, takže pod mosty a propustky potok na mapě mizí.
