@@ -295,6 +295,17 @@ for _, r in inf.iterrows():
 for q in UP['paved']: fill(Polygon([to_local(lo, la) for la, lo in q]), C['paved'], block=True)
 
 wat = load('water')
+POTOKY = set(geo.MESTO.get('potoky', []))             # jména potoků, které se kreslí čárou (mesto.json "potoky"); ostatní potoky ne (zatrubněné)
+POTOK_W = float(geo.MESTO.get('potok_sirka', 2.5))    # šířka potoka v m (řeka 6 m)
+
+
+def drawn_stream(r):
+    """potok z mesto.json "potoky", bez zatrubněných úseků (tag tunnel / covered)"""
+    if r['class'] != 'stream' or sname(r) not in POTOKY: return False
+    tg = dict(t for t in (r.get('source_tags') if r.get('source_tags') is not None else []))
+    return tg.get('tunnel') in (None, 'no') and tg.get('covered') in (None, 'no')
+
+
 for _, r in wat.iterrows():
     g = r.geom
     if g.geom_type in ('Polygon', 'MultiPolygon'):
@@ -302,6 +313,8 @@ for _, r in wat.iterrows():
         else: fill(g, C['water'], block=True)
     elif r['class'] == 'river':          # jen řeky; potoky v datech často vedou pod domy (zatrubněné) a ve skutečnosti nejsou vidět
         line(g, C['stream'], 6, block=True)
+    elif drawn_stream(r):
+        line(g, C['stream'], POTOK_W, block=True)
 
 seg = load('segment')
 TUNNEL_MIN = 60.0     # kratší „tunel“ je podjezd pod silnicí nebo tratí: kreslí se jako cesta, nad ní vede most
@@ -1584,7 +1597,7 @@ for _, r in wat.iterrows():
     if g.geom_type in ('Polygon', 'MultiPolygon'):
         for p in polys(g):
             if p.area > 15: water_out['ponds'].append(zline(p.exterior) + ([] if r['class'] != 'swimming_pool' else []))
-    elif r['class'] == 'river':
+    elif r['class'] == 'river' or drawn_stream(r):
         water_out['streams'] += [zline(l) for l in lines(g)]
 piste_out = []                                 # pro lyžaře v prohlížeči: vždy shora dolů
 for l in PISTE:

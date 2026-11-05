@@ -46,6 +46,7 @@ Automaticky z dat vyjde celé město. Ručně je potřeba:
 - **Příběhy míst** → `mista.json`: `[{"nazev", "lat", "lon", "text"}]`. Texty piš jen z ověřených zdrojů (web obce,
   Památkový katalog, Wikipedie s odkazem). Když si nejsi jistý, zeptej se uživatele. Nic si nevymýšlej.
   Ukázka je v `priklady/mista.json`.
+- **Potoky:** `prep.py` potoky standardně nekreslí (často zatrubněné). Jména potoků, které se mají kreslit, dej do `mesto.json`: `"potoky": ["Název potoku"]`, šířka `potok_sirka` (m, výchozí 2,5).
 - **Chyby v datech:** špatná výška → zkontroluj `build/dmp_kontrola.csv`; chybějící nebo nesmyslná budova → nejlepší
   je opravit ji v OpenStreetMap (a za pár týdnů se propíše do Overture), jinak pravidlo v `prep.py`.
 - **Les a pole:** maska lesa z ortofota (`nastroje/les.py`), pole ze ZABAGED (`nastroje/zabaged.py`, `nastroje/pole.py`).

@@ -34,5 +34,9 @@
   "zdroj": null,
   "zdroj_url": null
  },
- "vanocni_strom": null
+ "vanocni_strom": null,
+ "potoky": [
+  "Losinský potok"
+ ],
+ "potok_sirka": 2.5
 }
