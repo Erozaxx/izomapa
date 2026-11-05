@@ -1,0 +1,43 @@
+[
+ {
+  "name": "Štěnovický zámek",
+  "lat": 49.673696,
+  "lon": 13.398326,
+  "text": "Barokní zámek na levém břehu Úhlavy z doby kolem roku 1723 (web zámku uvádí rok založení 1723). Jednopatrová stavba se zaoblenými rohy, na delší straně k řece stojí hranolová věž s hodinami. Dnes je v soukromém vlastnictví a je kulturní památkou. Zdroje: zamekstenovice.cz (včetně galerie), Wikipedie (Zámek Štěnovice); poloha a tvar střechy z ortofota ČÚZK.",
+  "spec": {
+   "wc": [
+    232,
+    214,
+    178
+   ],
+   "rc": [
+    150,
+    92,
+    78
+   ],
+   "r": "hipped",
+   "h": 9.5,
+   "rh": 4.5,
+   "win": 8,
+   "face": [
+    49.6732,
+    13.3983
+   ],
+   "towers": [
+    {
+     "at": "front",
+     "w": 4.5,
+     "h": 17,
+     "top": "tiered",
+     "to": 22,
+     "tc": [
+      112,
+      84,
+      70
+     ],
+     "clock": 1
+    }
+   ]
+  }
+ }
+]

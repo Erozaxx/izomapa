@@ -39,8 +39,21 @@ Render byl jednou přerušen a po spuštění znovu navázal na hotová data.
 
 ## Zjištěné nedostatky a otevřené věci
 
-- Žádné dominanty (`assets/dominanty.json`) ani příběhy míst (`mista.json`). Nepřidáno, protože nejsou ověřené zdroje ani fotky. Vyžaduje fotky od Toma a ověření textů.
+- Dominanty: jen Štěnovický zámek (viz níže). Další dominanty ani příběhy míst (`mista.json`) nejsou, chybí ověřené zdroje a fotky.
 - Bez MHD (`mhd.gtfs` není vyplněno), bez vánočního stromu.
 - Velké sklady na severu mapy jsou z OSM a laseru, nesrovnáno se skutečností.
 - Barvy a členění polí (žlutá, tmavě zelená, olivová) vychází ze ZABAGED a sezóny, nesrovnáno s realitou.
 - Před zveřejněním je nutné projít mapu a porovnat se skutečností.
+
+## Dominanta: Štěnovický zámek
+
+- Položka v `assets/dominanty.json` (v `.gitignore` není), bod 49.673696, 13.398326 padá dovnitř půdorysu budovy Overture `184c41e6-...` (OSM w259980577, 435 m2). Budova je kreslená ve čtverci `[0, 0]` a v pásu MARGIN čtverce `[0, 1]`, přegenerovány oba.
+- Zdroje: web zámku zamekstenovice.cz (rok založení 1723, galerie exteriérů), Wikipedie (Zámek Štěnovice: barokní, jednopatrová stavba se zaoblenými rohy, hranolová věž s hodinami na delší straně u řeky), ortofoto ČÚZK (valbová střecha, barva střechy, poloha věže na straně k řece), laserové výšky (medián 11 m, p90 15 m).
+- Model: valbová střecha, zdi 9,5 m, střecha 4,5 m, věž s hodinami 17 m s lucernou do 22 m. Barvy zdí a střechy podle ortofota a fotek z webu zámku (fotky jsou jen předloha, v gitu nejsou).
+- Neověřeno: přesná výška věže a tvar její střechy (na fotkách lucerna, zde zjednodušené patrové zakončení), vikýře a komíny, balustráda se sochami (nemodelováno), poloha věže podél průčelí (podle ortofota zhruba uprostřed delší strany, na fotkách spíš u rohu). Pomohly by Tomovy fotky z více stran, hlavně ze severu (vjezd) a z východu.
+
+## Losinský potok
+
+- V `mesto.json` (v `.gitignore`, do větve přes `git add -f`) je klíč `potoky: ["Losinský potok"]` a `potok_sirka: 2.5` (m). `prep.py` kreslí potoky z tohoto seznamu čárou jako řeku, ale užší; úseky s tagem tunnel nebo covered vynechává. Ostatní potoky se dál nekreslí (zatrubněné úseky v datech).
+- Data: Overture water, OSM way 81473053, 6,3 km od Lošiny k Úhlavě, v mapě od východního okraje čtverce `[0, 0]` obcí na západ. U ulice V potocích se v bodě 49.6731, 13.4015 napojuje Mlýnský potok (way 81486958), ten zatím není v seznamu. Tvar odpovídá hrubému náčrtu od Toma.
+- Silnice se kreslí přes potok, takže pod mosty a propustky potok na mapě mizí.
