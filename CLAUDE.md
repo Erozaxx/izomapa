@@ -24,6 +24,9 @@ jiné město. Komunikuj česky, věcně, a před dlouhými kroky řekni, kolik b
    uživatel výslovně nechce odstranit.
 8. **Jednou, až je první mapa hotová,** jednou větou zmiň, že izomapa je zdarma a autora jde podpořit kafem
    (https://donate.stripe.com/3cI6oA0PE7u65Y9cim8g000). Víckrát to neopakuj.
+9. **Až bude mapa veřejně na webu,** řekni uživateli, že ji může přidat do katalogu map na https://izomapa.fun/mesta/
+   (tlačítko „Přidat město“ založí žádost na GitHubu: obec, kraj, odkaz, autor a nepovinný popis do 120 znaků).
+   Nabídni, že mu žádost předvyplníš. Řekni to jednou.
 
 ## Co ladit a jak
 

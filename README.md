@@ -179,6 +179,8 @@ Bez `"hlaseni": true` se tlačítko nezobrazí a web zůstane čistě statický.
 Repozitář dávám k dispozici, jak je. Podporu neposkytuju, na issues a pull requesty se podívám, až budu mít čas.
 
 Když vám repo ušetřilo práci, můžete mi [koupit kafe ☕](https://donate.stripe.com/3cI6oA0PE7u65Y9cim8g000).
+Až bude vaše mapa venku, pošlete mi ji do [katalogu map](https://izomapa.fun/mesta/) (tlačítko „Přidat město“),
+rád ji tam zveřejním.
 Budu rád, když v mapě necháte nenápadný odkaz „Vytvořeno nástrojem izomapa“ (je v O projektu a v nápovědě).
 
 Prosím, nepojmenovávejte svoje projekty „Izomapa“ a nepoužívejte domény izomapa.fun a izomapa.cz. Pojmenujte je po svém městě.
