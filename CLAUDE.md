@@ -90,5 +90,6 @@ Ukazuj uživateli výřezy před a po.
 - `dzi.py`: paleta a Deep Zoom pyramidy (WebP). `compose.py`: složený náhled. `preview.py`: rychlý náhled pro web.
 - `overlay.py`: klikací vrstva (obrys budovy = konvexní obal půdorysu dole a nahoře). Po úpravě budov vždy spustit
   a obrys zkontrolovat v prohlížeči.
+- `build_html.py` vyrobí i `site/og.jpg` (náhled pro sdílení, výřez středu), když je v `mesto.json` vyplněné `url`; vlastní `site/og.jpg` nepřepíše.
 - `web/app.html`: prohlížeč (OpenSeadragon + animovaná vrstva: auta, MHD, lyžaři, kouř, počasí). Texty `{{…}}`
   doplní `build_html.py` z `mesto.json`.
